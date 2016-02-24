@@ -29,7 +29,7 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <groupId>io.druid.extensions</groupId>
+  <groupId>io.druid.extensions.core</groupId>
   <artifactId>graphite-emitter</artifactId>
   <name>graphite-emitter</name>
   <description>Druid emitter extension to support graphite</description>
