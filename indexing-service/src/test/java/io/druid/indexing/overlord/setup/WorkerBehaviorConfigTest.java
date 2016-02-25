@@ -19,6 +19,7 @@
 
 package io.druid.indexing.overlord.setup;
 
+import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.fasterxml.jackson.databind.BeanProperty;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.InjectableValues;
@@ -29,13 +30,39 @@ import io.druid.indexing.overlord.autoscaling.ec2.EC2EnvironmentConfig;
 import io.druid.indexing.overlord.autoscaling.ec2.EC2NodeData;
 import io.druid.indexing.overlord.autoscaling.ec2.StringEC2UserData;
 import io.druid.jackson.DefaultObjectMapper;
+import org.easymock.EasyMock;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
 
 public class WorkerBehaviorConfigTest
 {
+
+  private AmazonEC2Client amazonEC2Client;
+  private InjectableValues mockInjectableValues;
+
+  @Before
+  public void setUp() throws Exception
+  {
+    amazonEC2Client = EasyMock.createMock(AmazonEC2Client.class);
+    mockInjectableValues = new InjectableValues()
+    {
+      @Override
+      public Object findInjectableValue(
+          Object valueId, DeserializationContext ctxt, BeanProperty forProperty, Object beanInstance
+      )
+      {
+        if (valueId == "com.amazonaws.services.ec2.AmazonEC2") {
+          return amazonEC2Client;
+        } else {
+          return null;
+        }
+      }
+    };
+  }
+
   @Test
   public void testSerde() throws Exception
   {
@@ -49,6 +76,7 @@ public class WorkerBehaviorConfigTest
             7,
             11,
             new EC2EnvironmentConfig(
+                "us-east-1",
                 "us-east-1a",
                 new EC2NodeData(
                     "amiid",
@@ -67,23 +95,59 @@ public class WorkerBehaviorConfigTest
                     "version"
                 )
             ),
-            null,
+            amazonEC2Client,
             null
         )
     );
 
     final ObjectMapper mapper = new DefaultObjectMapper();
     mapper.setInjectableValues(
-        new InjectableValues()
-        {
-          @Override
-          public Object findInjectableValue(
-              Object valueId, DeserializationContext ctxt, BeanProperty forProperty, Object beanInstance
-          )
-          {
-            return null;
-          }
-        }
+        mockInjectableValues
+    );
+    Assert.assertEquals(config, mapper.readValue(mapper.writeValueAsBytes(config), WorkerBehaviorConfig.class));
+    EasyMock.expectLastCall().once();
+  }
+
+  @Test
+  public void testSerdeNullRegion() throws Exception
+  {
+    WorkerBehaviorConfig config = new WorkerBehaviorConfig(
+        new FillCapacityWithAffinityWorkerSelectStrategy(
+            new FillCapacityWithAffinityConfig(
+                ImmutableMap.of("foo", Arrays.asList("localhost"))
+            )
+        ),
+        new EC2AutoScaler(
+            7,
+            11,
+            new EC2EnvironmentConfig(
+                null,
+                "us-east-1a",
+                new EC2NodeData(
+                    "amiid",
+                    "instanceType",
+                    3,
+                    5,
+                    Arrays.asList("securityGroupIds"),
+                    "keyNames",
+                    "subnetId",
+                    null,
+                    null
+                ),
+                new StringEC2UserData(
+                    "availZone",
+                    "replace",
+                    "version"
+                )
+            ),
+            amazonEC2Client,
+            null
+        )
+    );
+
+    final ObjectMapper mapper = new DefaultObjectMapper();
+    mapper.setInjectableValues(
+        mockInjectableValues
     );
     Assert.assertEquals(config, mapper.readValue(mapper.writeValueAsBytes(config), WorkerBehaviorConfig.class));
   }

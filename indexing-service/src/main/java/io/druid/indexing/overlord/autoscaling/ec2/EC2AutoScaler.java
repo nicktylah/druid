@@ -19,6 +19,7 @@
 
 package io.druid.indexing.overlord.autoscaling.ec2;
 
+import com.amazonaws.regions.RegionUtils;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
@@ -70,6 +71,15 @@ public class EC2AutoScaler implements AutoScaler<EC2EnvironmentConfig>
     this.envConfig = envConfig;
     this.amazonEC2Client = amazonEC2Client;
     this.config = config;
+
+    final String regionName = envConfig.getRegion();
+    if (regionName != null) {
+      try {
+        amazonEC2Client.setRegion(RegionUtils.getRegion(regionName));
+      } catch (IllegalArgumentException e) {
+        log.warn(e, String.format("Invalid region: %s", regionName));
+      }
+    }
   }
 
   @Override

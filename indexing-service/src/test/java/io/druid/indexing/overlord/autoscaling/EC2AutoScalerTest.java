@@ -19,6 +19,8 @@
 
 package io.druid.indexing.overlord.autoscaling;
 
+import com.amazonaws.regions.Region;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
@@ -56,6 +58,13 @@ public class EC2AutoScalerTest
   private static final String AMI_ID = "dummy";
   private static final String INSTANCE_ID = "theInstance";
   public static final EC2EnvironmentConfig ENV_CONFIG = new EC2EnvironmentConfig(
+      "us-east-1",
+      "us-east-1a",
+      new EC2NodeData(AMI_ID, INSTANCE_ID, 1, 1, Lists.<String>newArrayList(), "foo", "mySubnet", null, null),
+      new GalaxyEC2UserData(new DefaultObjectMapper(), "env", "version", "type")
+  );
+  public static final EC2EnvironmentConfig LEGACY_ENV_CONFIG = new EC2EnvironmentConfig(
+      null,
       "us-east-1a",
       new EC2NodeData(AMI_ID, INSTANCE_ID, 1, 1, Lists.<String>newArrayList(), "foo", "mySubnet", null, null),
       new GalaxyEC2UserData(new DefaultObjectMapper(), "env", "version", "type")
@@ -93,6 +102,38 @@ public class EC2AutoScalerTest
   }
 
   @Test
+  public void testEC2AutoScalerSetsEC2ClientRegion()
+  {
+    amazonEC2Client.setRegion(Region.getRegion(Regions.fromName(ENV_CONFIG.getRegion())));
+    EasyMock.expectLastCall().once();
+    EasyMock.replay(amazonEC2Client);
+    new EC2AutoScaler(
+        0,
+        1,
+        ENV_CONFIG,
+        amazonEC2Client,
+        managementConfig
+    );
+    EasyMock.replay(describeInstancesResult);
+    EasyMock.replay(reservation);
+  }
+
+  @Test
+  public void testEC2AutoScalerDoesNotSetEC2ClientRegionIfNull()
+  {
+    new EC2AutoScaler(
+        0,
+        1,
+        LEGACY_ENV_CONFIG,
+        amazonEC2Client,
+        managementConfig
+    );
+    EasyMock.replay(amazonEC2Client);
+    EasyMock.replay(describeInstancesResult);
+    EasyMock.replay(reservation);
+  }
+
+  @Test
   public void testScale()
   {
     RunInstancesResult runInstancesResult = EasyMock.createMock(RunInstancesResult.class);
@@ -104,6 +145,7 @@ public class EC2AutoScalerTest
         amazonEC2Client,
         managementConfig
     );
+    EasyMock.expectLastCall().anyTimes();
 
     EasyMock.expect(amazonEC2Client.runInstances(EasyMock.anyObject(RunInstancesRequest.class))).andReturn(
         runInstancesResult
@@ -146,6 +188,7 @@ public class EC2AutoScalerTest
         amazonEC2Client,
         managementConfig
     );
+    EasyMock.expectLastCall().anyTimes();
 
     final int n = 150;
     Assert.assertTrue(n <= 2 * EC2AutoScaler.MAX_AWS_FILTER_VALUES);
@@ -203,6 +246,7 @@ public class EC2AutoScalerTest
         amazonEC2Client,
         managementConfig
     );
+    EasyMock.expectLastCall().anyTimes();
 
     final int n = 150;
     Assert.assertTrue(n <= 2 * EC2AutoScaler.MAX_AWS_FILTER_VALUES);
