@@ -24,18 +24,37 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.InjectableValues;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import io.druid.common.aws.ec2.EC2EnvironmentConfig;
+import io.druid.common.aws.ec2.EC2NodeData;
+import io.druid.common.aws.ec2.StringEC2UserData;
 import io.druid.indexing.overlord.autoscaling.ec2.EC2AutoScaler;
-import io.druid.indexing.overlord.autoscaling.ec2.EC2EnvironmentConfig;
-import io.druid.indexing.overlord.autoscaling.ec2.EC2NodeData;
-import io.druid.indexing.overlord.autoscaling.ec2.StringEC2UserData;
 import io.druid.jackson.DefaultObjectMapper;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
 
 public class WorkerBehaviorConfigTest
 {
+
+  private InjectableValues mockInjectableValues;
+
+  @Before
+  public void setUp() throws Exception
+  {
+    mockInjectableValues = new InjectableValues()
+    {
+      @Override
+      public Object findInjectableValue(
+          Object valueId, DeserializationContext ctxt, BeanProperty forProperty, Object beanInstance
+      )
+      {
+        return null;
+      }
+    };
+  }
+
   @Test
   public void testSerde() throws Exception
   {
@@ -49,6 +68,7 @@ public class WorkerBehaviorConfigTest
             7,
             11,
             new EC2EnvironmentConfig(
+                "us-east-1",
                 "us-east-1a",
                 new EC2NodeData(
                     "amiid",
@@ -74,16 +94,51 @@ public class WorkerBehaviorConfigTest
 
     final ObjectMapper mapper = new DefaultObjectMapper();
     mapper.setInjectableValues(
-        new InjectableValues()
-        {
-          @Override
-          public Object findInjectableValue(
-              Object valueId, DeserializationContext ctxt, BeanProperty forProperty, Object beanInstance
-          )
-          {
-            return null;
-          }
-        }
+        mockInjectableValues
+    );
+    Assert.assertEquals(config, mapper.readValue(mapper.writeValueAsBytes(config), WorkerBehaviorConfig.class));
+  }
+
+  @Test
+  public void testSerdeNullRegion() throws Exception
+  {
+    WorkerBehaviorConfig config = new WorkerBehaviorConfig(
+        new FillCapacityWithAffinityWorkerSelectStrategy(
+            new FillCapacityWithAffinityConfig(
+                ImmutableMap.of("foo", Arrays.asList("localhost"))
+            )
+        ),
+        new EC2AutoScaler(
+            7,
+            11,
+            new EC2EnvironmentConfig(
+                null,
+                "us-east-1a",
+                new EC2NodeData(
+                    "amiid",
+                    "instanceType",
+                    3,
+                    5,
+                    Arrays.asList("securityGroupIds"),
+                    "keyNames",
+                    "subnetId",
+                    null,
+                    null
+                ),
+                new StringEC2UserData(
+                    "availZone",
+                    "replace",
+                    "version"
+                )
+            ),
+            null,
+            null
+        )
+    );
+
+    final ObjectMapper mapper = new DefaultObjectMapper();
+    mapper.setInjectableValues(
+        mockInjectableValues
     );
     Assert.assertEquals(config, mapper.readValue(mapper.writeValueAsBytes(config), WorkerBehaviorConfig.class));
   }

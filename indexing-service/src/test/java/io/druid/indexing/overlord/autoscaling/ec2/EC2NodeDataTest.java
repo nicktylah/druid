@@ -20,6 +20,7 @@
 package io.druid.indexing.overlord.autoscaling.ec2;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.druid.common.aws.ec2.EC2NodeData;
 import io.druid.jackson.DefaultObjectMapper;
 import org.junit.Assert;
 import org.junit.Test;

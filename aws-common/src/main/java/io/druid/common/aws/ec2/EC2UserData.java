@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package io.druid.indexing.overlord.autoscaling.ec2;
+package io.druid.common.aws.ec2;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;

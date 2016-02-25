@@ -33,10 +33,10 @@ import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.DiscreteDomain;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Range;
+import io.druid.common.aws.ec2.EC2EnvironmentConfig;
+import io.druid.common.aws.ec2.EC2NodeData;
+import io.druid.common.aws.ec2.GalaxyEC2UserData;
 import io.druid.indexing.overlord.autoscaling.ec2.EC2AutoScaler;
-import io.druid.indexing.overlord.autoscaling.ec2.EC2EnvironmentConfig;
-import io.druid.indexing.overlord.autoscaling.ec2.EC2NodeData;
-import io.druid.indexing.overlord.autoscaling.ec2.GalaxyEC2UserData;
 import io.druid.jackson.DefaultObjectMapper;
 import org.easymock.EasyMock;
 import org.junit.After;
@@ -56,6 +56,13 @@ public class EC2AutoScalerTest
   private static final String AMI_ID = "dummy";
   private static final String INSTANCE_ID = "theInstance";
   public static final EC2EnvironmentConfig ENV_CONFIG = new EC2EnvironmentConfig(
+      "us-east-1",
+      "us-east-1a",
+      new EC2NodeData(AMI_ID, INSTANCE_ID, 1, 1, Lists.<String>newArrayList(), "foo", "mySubnet", null, null),
+      new GalaxyEC2UserData(new DefaultObjectMapper(), "env", "version", "type")
+  );
+  public static final EC2EnvironmentConfig LEGACY_ENV_CONFIG = new EC2EnvironmentConfig(
+      null,
       "us-east-1a",
       new EC2NodeData(AMI_ID, INSTANCE_ID, 1, 1, Lists.<String>newArrayList(), "foo", "mySubnet", null, null),
       new GalaxyEC2UserData(new DefaultObjectMapper(), "env", "version", "type")

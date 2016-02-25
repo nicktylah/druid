@@ -20,18 +20,22 @@
 package io.druid.guice;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Provides;
+import com.metamx.emitter.EmittingLogger;
 import io.druid.common.aws.AWSCredentialsConfig;
 import io.druid.common.aws.AWSCredentialsUtils;
+import io.druid.common.aws.ec2.EC2EnvironmentConfig;
 
 /**
  */
 public class AWSModule implements Module
 {
+  private static final EmittingLogger log = new EmittingLogger(AWSModule.class);
+
   @Override
   public void configure(Binder binder)
   {
@@ -47,8 +51,21 @@ public class AWSModule implements Module
 
   @Provides
   @LazySingleton
-  public AmazonEC2 getEc2Client(AWSCredentialsProvider credentials)
+  public AmazonEC2Client getEC2Client(
+      AWSCredentialsProvider credentials,
+      EC2RegionSetter ec2RegionSetter,
+      @JsonProperty("envConfig") EC2EnvironmentConfig envConfig)
   {
-    return new AmazonEC2Client(credentials);
+    final AmazonEC2Client amazonEC2Client = new AmazonEC2Client(credentials);
+
+    final String regionName = envConfig.getRegion();
+    if (regionName != null) {
+      try {
+        ec2RegionSetter.setRegion(amazonEC2Client, regionName);
+      } catch (IllegalArgumentException e) {
+        log.warn(e, String.format("Invalid region: %s", regionName));
+      }
+    }
+    return amazonEC2Client;
   }
 }

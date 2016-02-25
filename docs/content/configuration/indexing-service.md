@@ -134,6 +134,7 @@ A sample worker config spec is shown below:
     "minNumWorkers": 2,
     "maxNumWorkers": 12,
     "envConfig": {
+      "region": "us-east-1",
       "availabilityZone": "us-east-1a",
       "nodeData": {
         "amiId": "${AMI}",
@@ -141,7 +142,12 @@ A sample worker config spec is shown below:
         "minInstances": 1,
         "maxInstances": 1,
         "securityGroupIds": ["${IDs}"],
-        "keyName": ${KEY_NAME}
+        "keyName": "${KEY_NAME}",
+        "subnetId": "${SUBNET_ID}",
+        "iamProfile": {
+          "name": "${IAM_PROFILE_NAME}",
+          "arn": "${IAM_PROFILE_INSTANCE_PROFILE_ARN}"
+        }
       },
       "userData": {
         "impl": "string",

@@ -37,6 +37,8 @@ import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Lists;
 import com.metamx.emitter.EmittingLogger;
+import io.druid.common.aws.ec2.EC2EnvironmentConfig;
+import io.druid.common.aws.ec2.EC2NodeData;
 import io.druid.indexing.overlord.autoscaling.AutoScaler;
 import io.druid.indexing.overlord.autoscaling.AutoScalingData;
 import io.druid.indexing.overlord.autoscaling.SimpleResourceManagementConfig;

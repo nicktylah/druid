@@ -33,8 +33,45 @@ import org.junit.Test;
 
 public class EC2AutoScalerSerdeTest
 {
+  private InjectableValues mockInjectableValues = new InjectableValues()
+  {
+    @Override
+    public Object findInjectableValue(
+        Object valueId, DeserializationContext ctxt, BeanProperty forProperty, Object beanInstance
+    )
+    {
+      return null;
+    }
+  };
+
   final String json = "{\n"
                       + "   \"envConfig\" : {\n"
+                      + "      \"region\" : \"westeros-east-1\",\n"
+                      + "      \"availabilityZone\" : \"westeros-east-1a\",\n"
+                      + "      \"nodeData\" : {\n"
+                      + "         \"amiId\" : \"ami-abc\",\n"
+                      + "         \"instanceType\" : \"t1.micro\",\n"
+                      + "         \"keyName\" : \"iron\",\n"
+                      + "         \"maxInstances\" : 1,\n"
+                      + "         \"minInstances\" : 1,\n"
+                      + "         \"securityGroupIds\" : [\"kingsguard\"],\n"
+                      + "         \"subnetId\" : \"redkeep\",\n"
+                      + "         \"iamProfile\" : {\"name\": \"foo\", \"arn\": \"bar\"}\n"
+                      + "      },\n"
+                      + "      \"userData\" : {\n"
+                      + "         \"data\" : \"VERSION=:VERSION:\\n\","
+                      + "         \"impl\" : \"string\",\n"
+                      + "         \"versionReplacementString\" : \":VERSION:\"\n"
+                      + "      }\n"
+                      + "   },\n"
+                      + "   \"maxNumWorkers\" : 3,\n"
+                      + "   \"minNumWorkers\" : 2,\n"
+                      + "   \"type\" : \"ec2\"\n"
+                      + "}";
+
+  final String legacyJson = "{\n"
+                      + "   \"envConfig\" : {\n"
+                      + "      \"region\" : null,\n"
                       + "      \"availabilityZone\" : \"westeros-east-1a\",\n"
                       + "      \"nodeData\" : {\n"
                       + "         \"amiId\" : \"ami-abc\",\n"
@@ -62,16 +99,7 @@ public class EC2AutoScalerSerdeTest
   {
     final ObjectMapper objectMapper = new DefaultObjectMapper();
     objectMapper.setInjectableValues(
-        new InjectableValues()
-        {
-          @Override
-          public Object findInjectableValue(
-              Object o, DeserializationContext deserializationContext, BeanProperty beanProperty, Object o1
-          )
-          {
-            return null;
-          }
-        }
+        mockInjectableValues
     );
 
     final EC2AutoScaler autoScaler = objectMapper.readValue(json, EC2AutoScaler.class);
@@ -82,6 +110,28 @@ public class EC2AutoScalerSerdeTest
         EC2AutoScaler.class
     );
     verifyAutoScaler(roundTripAutoScaler);
+    Assert.assertEquals("westeros-east-1", autoScaler.getEnvConfig().getRegion());
+
+    Assert.assertEquals("Round trip equals", autoScaler, roundTripAutoScaler);
+  }
+
+  @Test
+  public void testSerdeNullRegion() throws Exception
+  {
+    final ObjectMapper objectMapper = new DefaultObjectMapper();
+    objectMapper.setInjectableValues(
+        mockInjectableValues
+    );
+
+    final EC2AutoScaler autoScaler = objectMapper.readValue(legacyJson, EC2AutoScaler.class);
+    verifyAutoScaler(autoScaler);
+
+    final EC2AutoScaler roundTripAutoScaler = objectMapper.readValue(
+        objectMapper.writeValueAsBytes(autoScaler),
+        EC2AutoScaler.class
+    );
+    verifyAutoScaler(roundTripAutoScaler);
+    Assert.assertEquals(null, autoScaler.getEnvConfig().getRegion());
 
     Assert.assertEquals("Round trip equals", autoScaler, roundTripAutoScaler);
   }
