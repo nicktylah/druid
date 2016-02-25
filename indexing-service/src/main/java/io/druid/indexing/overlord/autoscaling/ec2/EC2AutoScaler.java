@@ -21,6 +21,7 @@ package io.druid.indexing.overlord.autoscaling.ec2;
 
 import com.amazonaws.regions.RegionUtils;
 import com.amazonaws.services.ec2.AmazonEC2;
+import com.amazonaws.services.ec2.model.CreateTagsRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.Filter;
@@ -30,6 +31,7 @@ import com.amazonaws.services.ec2.model.Placement;
 import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
 import com.amazonaws.services.ec2.model.RunInstancesResult;
+import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 import com.fasterxml.jackson.annotation.JacksonInject;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -43,6 +45,9 @@ import io.druid.indexing.overlord.autoscaling.AutoScalingData;
 import io.druid.indexing.overlord.autoscaling.SimpleResourceManagementConfig;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  */
@@ -170,6 +175,35 @@ public class EC2AutoScaler implements AutoScaler<EC2EnvironmentConfig>
       );
 
       log.info("Created instances: %s", instanceIds);
+
+      if (envConfig.getNodeData().getTags() != null) {
+        final List<Tag> tags = envConfig
+            .getNodeData()
+            .getTags()
+            .stream()
+            .flatMap(
+                new java.util.function.Function<Map<String, String>, Stream<Tag>>() {
+                  public Stream<Tag> apply(final Map<String, String> map) {
+                    return map
+                        .entrySet()
+                        .stream()
+                        .map(
+                            new java.util.function.Function<Map.Entry<String, String>, Tag>() {
+                              @Override
+                              public Tag apply(Map.Entry<String, String> entry) {
+                                return new Tag(entry.getKey(), entry.getValue());
+                              }
+                            }
+                        );
+                  }
+                }
+            )
+            .collect(Collectors.<Tag>toList());
+
+        final CreateTagsRequest createTagsRequest = new CreateTagsRequest();
+        createTagsRequest.withResources(instanceIds).withTags(tags);
+        amazonEC2Client.createTags(createTagsRequest);
+      }
 
       return new AutoScalingData(
           Lists.transform(
