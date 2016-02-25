@@ -27,19 +27,27 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class EC2EnvironmentConfig
 {
   private final String availabilityZone;
+  private final String region;
   private final EC2NodeData nodeData;
   private final EC2UserData userData;
 
   @JsonCreator
   public EC2EnvironmentConfig(
+      @JsonProperty("region") String region,
       @JsonProperty("availabilityZone") String availabilityZone,
       @JsonProperty("nodeData") EC2NodeData nodeData,
       @JsonProperty("userData") EC2UserData userData
   )
   {
+    this.region = region;
     this.availabilityZone = availabilityZone;
     this.nodeData = nodeData;
     this.userData = userData;
+  }
+
+  @JsonProperty
+  public String getRegion() {
+    return region;
   }
 
   @JsonProperty
@@ -64,6 +72,7 @@ public class EC2EnvironmentConfig
   public String toString()
   {
     return "EC2EnvironmentConfig{" +
+           "region='" + region + '\'' +
            "availabilityZone='" + availabilityZone + '\'' +
            ", nodeData=" + nodeData +
            ", userData=" + userData +
@@ -82,6 +91,9 @@ public class EC2EnvironmentConfig
 
     EC2EnvironmentConfig that = (EC2EnvironmentConfig) o;
 
+    if (region != null ? !region.equals(that.region) : that.region != null) {
+      return false;
+    }
     if (availabilityZone != null ? !availabilityZone.equals(that.availabilityZone) : that.availabilityZone != null) {
       return false;
     }
@@ -98,7 +110,8 @@ public class EC2EnvironmentConfig
   @Override
   public int hashCode()
   {
-    int result = availabilityZone != null ? availabilityZone.hashCode() : 0;
+    int result = region != null ? region.hashCode() : 0;
+    result = 31 * result + (availabilityZone != null ? availabilityZone.hashCode() : 0);
     result = 31 * result + (nodeData != null ? nodeData.hashCode() : 0);
     result = 31 * result + (userData != null ? userData.hashCode() : 0);
     return result;

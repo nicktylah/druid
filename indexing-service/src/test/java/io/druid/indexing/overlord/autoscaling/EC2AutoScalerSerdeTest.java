@@ -35,6 +35,7 @@ public class EC2AutoScalerSerdeTest
 {
   final String json = "{\n"
                       + "   \"envConfig\" : {\n"
+                      + "      \"region\" : \"westeros-east-1\",\n"
                       + "      \"availabilityZone\" : \"westeros-east-1a\",\n"
                       + "      \"nodeData\" : {\n"
                       + "         \"amiId\" : \"ami-abc\",\n"
@@ -91,6 +92,7 @@ public class EC2AutoScalerSerdeTest
     Assert.assertEquals(3, autoScaler.getMaxNumWorkers());
     Assert.assertEquals(2, autoScaler.getMinNumWorkers());
     Assert.assertEquals("westeros-east-1a", autoScaler.getEnvConfig().getAvailabilityZone());
+    Assert.assertEquals("westeros-east-1", autoScaler.getEnvConfig().getRegion());
 
     // nodeData
     Assert.assertEquals("ami-abc", autoScaler.getEnvConfig().getNodeData().getAmiId());

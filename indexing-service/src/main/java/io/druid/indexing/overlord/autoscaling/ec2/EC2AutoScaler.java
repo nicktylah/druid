@@ -19,6 +19,7 @@
 
 package io.druid.indexing.overlord.autoscaling.ec2;
 
+import com.amazonaws.regions.RegionUtils;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
@@ -40,6 +41,7 @@ import com.metamx.emitter.EmittingLogger;
 import io.druid.indexing.overlord.autoscaling.AutoScaler;
 import io.druid.indexing.overlord.autoscaling.AutoScalingData;
 import io.druid.indexing.overlord.autoscaling.SimpleResourceManagementConfig;
+import org.skife.jdbi.v2.sqlobject.customizers.OverrideStatementLocatorWith;
 
 import java.util.List;
 
@@ -70,6 +72,13 @@ public class EC2AutoScaler implements AutoScaler<EC2EnvironmentConfig>
     this.envConfig = envConfig;
     this.amazonEC2Client = amazonEC2Client;
     this.config = config;
+
+    // Set the AWS region to work in according to envConfig, if set.
+    try {
+      amazonEC2Client.setRegion(RegionUtils.getRegion(envConfig.getRegion()));
+    } catch (Exception e) {
+      log.warn(String.format("Attempting to set an invalid region: %s", envConfig.getRegion()), e);
+    }
   }
 
   @Override

@@ -49,6 +49,7 @@ public class WorkerBehaviorConfigTest
             7,
             11,
             new EC2EnvironmentConfig(
+                "us-east-1",
                 "us-east-1a",
                 new EC2NodeData(
                     "amiid",
