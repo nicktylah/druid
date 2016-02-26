@@ -36,12 +36,23 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class WorkerBehaviorConfigTest
 {
 
   private AmazonEC2Client amazonEC2Client;
   private InjectableValues mockInjectableValues;
+  private static final Map<String, String> tagMap;
+  static
+  {
+    tagMap = new HashMap<>();
+    tagMap.put("role", "production");
+  }
+  private static final List<Map<String, String>> TAGS = Collections.singletonList(tagMap);
 
   @Before
   public void setUp() throws Exception
@@ -87,7 +98,8 @@ public class WorkerBehaviorConfigTest
                     "keyNames",
                     "subnetId",
                     null,
-                    null
+                    null,
+                    TAGS
                 ),
                 new StringEC2UserData(
                     "availZone",
@@ -109,7 +121,7 @@ public class WorkerBehaviorConfigTest
   }
 
   @Test
-  public void testSerdeNullRegion() throws Exception
+  public void testSerdeLegacyConfig() throws Exception
   {
     WorkerBehaviorConfig config = new WorkerBehaviorConfig(
         new FillCapacityWithAffinityWorkerSelectStrategy(
@@ -131,6 +143,7 @@ public class WorkerBehaviorConfigTest
                     Arrays.asList("securityGroupIds"),
                     "keyNames",
                     "subnetId",
+                    null,
                     null,
                     null
                 ),

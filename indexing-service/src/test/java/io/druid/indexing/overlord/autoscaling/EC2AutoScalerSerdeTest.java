@@ -33,6 +33,9 @@ import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class EC2AutoScalerSerdeTest
 {
   private AmazonEC2Client amazonEC2Client = EasyMock.createMock(AmazonEC2Client.class);
@@ -63,7 +66,11 @@ public class EC2AutoScalerSerdeTest
                       + "         \"minInstances\" : 1,\n"
                       + "         \"securityGroupIds\" : [\"kingsguard\"],\n"
                       + "         \"subnetId\" : \"redkeep\",\n"
-                      + "         \"iamProfile\" : {\"name\": \"foo\", \"arn\": \"bar\"}\n"
+                      + "         \"iamProfile\" : {\"name\": \"foo\", \"arn\": \"bar\"},\n"
+                      + "         \"tags\" : [\n"
+                      + "           {\"name\": \"joffrey\"},\n"
+                      + "           {\"role\": \"production\"}\n"
+                      + "         ]\n"
                       + "      },\n"
                       + "      \"userData\" : {\n"
                       + "         \"data\" : \"VERSION=:VERSION:\\n\","
@@ -88,7 +95,8 @@ public class EC2AutoScalerSerdeTest
                       + "         \"minInstances\" : 1,\n"
                       + "         \"securityGroupIds\" : [\"kingsguard\"],\n"
                       + "         \"subnetId\" : \"redkeep\",\n"
-                      + "         \"iamProfile\" : {\"name\": \"foo\", \"arn\": \"bar\"}\n"
+                      + "         \"iamProfile\" : {\"name\": \"foo\", \"arn\": \"bar\"},\n"
+                      + "         \"tags\" : null\n"
                       + "      },\n"
                       + "      \"userData\" : {\n"
                       + "         \"data\" : \"VERSION=:VERSION:\\n\","
@@ -118,6 +126,18 @@ public class EC2AutoScalerSerdeTest
     );
     verifyAutoScaler(roundTripAutoScaler);
     Assert.assertEquals("westeros-east-1", autoScaler.getEnvConfig().getRegion());
+    Assert.assertEquals(2, autoScaler.getEnvConfig().getNodeData().getTags().size());
+
+    Map<String, String> expectedNameMap = new HashMap<>();
+    expectedNameMap.put("name", "joffrey");
+    Map<String, String> expectedRoleMap = new HashMap<>();
+    expectedRoleMap.put("role", "production");
+    Assert.assertEquals(
+        true,
+        expectedNameMap.equals(autoScaler.getEnvConfig().getNodeData().getTags().get(0)));
+    Assert.assertEquals(
+        true,
+        expectedRoleMap.equals(autoScaler.getEnvConfig().getNodeData().getTags().get(1)));
 
     Assert.assertEquals("Round trip equals", autoScaler, roundTripAutoScaler);
   }
@@ -139,6 +159,7 @@ public class EC2AutoScalerSerdeTest
     );
     verifyAutoScaler(roundTripAutoScaler);
     Assert.assertEquals(null, autoScaler.getEnvConfig().getRegion());
+    Assert.assertEquals(null, autoScaler.getEnvConfig().getNodeData().getTags());
 
     Assert.assertEquals("Round trip equals", autoScaler, roundTripAutoScaler);
   }

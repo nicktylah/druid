@@ -20,11 +20,15 @@
 package io.druid.indexing.overlord.autoscaling.ec2;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.api.client.util.Lists;
 import io.druid.jackson.DefaultObjectMapper;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class EC2NodeDataTest
 {
@@ -32,9 +36,18 @@ public class EC2NodeDataTest
   public void testSerde() throws Exception
   {
     final ObjectMapper objectMapper = new DefaultObjectMapper();
-    final String json = "{ \"amiId\" : \"abc123\", \"instanceType\" : \"k2.9xsmall\", \"minInstances\" : 1, \"maxInstances\" : 2,"
-                        + " \"securityGroupIds\" : [\"sg-abc321\"], \"keyName\" : \"opensesame\", \"subnetId\" : \"darknet2\","
-                        + " \"associatePublicIpAddress\" : true, \"iamProfile\" : { \"name\" : \"john\", \"arn\" : \"xxx:abc:1234/xyz\" } }";
+    final String json = "{"
+                        + "\"amiId\" : \"abc123\","
+                        + "\"instanceType\" : \"k2.9xsmall\","
+                        + "\"minInstances\" : 1,"
+                        + "\"maxInstances\" : 2,"
+                        + " \"securityGroupIds\" : [\"sg-abc321\"],"
+                        + "\"keyName\" : \"opensesame\","
+                        + "\"subnetId\" : \"darknet2\","
+                        + " \"associatePublicIpAddress\" : true,"
+                        + "\"iamProfile\" : { \"name\" : \"john\", \"arn\" : \"xxx:abc:1234/xyz\" },"
+                        + "\"tags\" : [{ \"env\" : \"production\"}, {\"name\" : \"tagName\" }]"
+                        + "}";
     EC2NodeData nodeData = objectMapper.readValue(json, EC2NodeData.class);
 
     Assert.assertEquals("abc123", nodeData.getAmiId());
@@ -47,6 +60,16 @@ public class EC2NodeDataTest
     Assert.assertEquals("john", nodeData.getIamProfile().getName());
     Assert.assertEquals("xxx:abc:1234/xyz", nodeData.getIamProfile().getArn());
     Assert.assertEquals(true, nodeData.getAssociatePublicIpAddress());
+
+    Map<String, String> expectedTagMap1 = new HashMap<>();
+    Map<String, String> expectedTagMap2 = new HashMap<>();
+    expectedTagMap1.put("env", "production");
+    expectedTagMap2.put("name", "tagName");
+    List<Map<String, String>> expectedTags = Lists.newArrayList();
+    expectedTags.add(expectedTagMap1);
+    expectedTags.add(expectedTagMap2);
+
+    Assert.assertEquals(true, expectedTags.equals(nodeData.getTags()));
 
     EC2NodeData nodeData2 = objectMapper.readValue("{}", EC2NodeData.class);
     // default is not always false, null has to be a valid value
