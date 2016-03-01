@@ -19,6 +19,7 @@
 
 package io.druid.guice;
 
+import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 
@@ -30,8 +31,7 @@ public class EC2RegionSetter {
 
   public void setRegion(AmazonEC2Client amazonEC2Client, String regionName) {
     synchronized (this) {
-      amazonEC2Client
-          .setRegion(com.amazonaws.regions.Region.getRegion(Regions.fromName(regionName)));
+      amazonEC2Client.setRegion(Region.getRegion(Regions.fromName(regionName)));
     }
   }
 
